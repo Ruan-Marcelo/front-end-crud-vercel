@@ -1,65 +1,147 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>CRUD Vercel</title>
+<meta charset="UTF-8">
+<title>Minhas Certificações</title>
+
+<style>
+  body {
+    font-family: Arial;
+    background: #111;
+    color: white;
+    padding: 20px;
+  }
+
+  input, textarea {
+    display: block;
+    margin: 5px 0;
+    width: 300px;
+    padding: 5px;
+  }
+
+  button {
+    margin: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  .card {
+    background: #222;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  img {
+    width: 80px;
+    border-radius: 5px;
+  }
+</style>
 </head>
+
 <body>
 
-  <h1>CRUD Simples</h1>
+<h1>🎓 Minhas Certificações</h1>
 
-  <input type="text" id="name" placeholder="Nome do item">
-  <button onclick="addItem()">Adicionar</button>
+<input id="nome" placeholder="Nome da certificação">
+<input id="instituicao" placeholder="Instituição">
+<input id="data" placeholder="Data de conclusão">
+<input id="imagem" placeholder="URL da imagem">
+<textarea id="descricao" placeholder="Descrição"></textarea>
 
-  <ul id="list"></ul>
+<button onclick="salvar()">Salvar</button>
 
-  <script>
-    const api = "https://crud-vercel-basic.vercel.app/api";
+<h2>Lista</h2>
+<div id="lista"></div>
 
-    async function getItems() {
-      const res = await fetch(api);
-      const data = await res.json();
+<script>
+const api = "/api";
+let editandoId = null;
 
-      const list = document.getElementById("list");
-      list.innerHTML = "";
+async function carregar() {
+  const res = await fetch(api);
+  const data = await res.json();
 
-      data.forEach(item => {
-        const li = document.createElement("li");
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
 
-        li.innerHTML = `
-          ${item.name}
-          <button onclick="deleteItem(${item.id})">X</button>
-        `;
+  data.forEach(item => {
+    lista.innerHTML += `
+      <div class="card">
+        <img src="${item.imagem || ''}" />
+        <h3>${item.nome}</h3>
+        <p>${item.instituicao}</p>
+        <p>${item.data}</p>
+        <p>${item.descricao}</p>
 
-        list.appendChild(li);
-      });
-    }
+        <button onclick='editar(${JSON.stringify(item)})'>Editar</button>
+        <button onclick="deletar(${item.id})">Excluir</button>
+      </div>
+    `;
+  });
+}
 
-    async function addItem() {
-      const name = document.getElementById("name").value;
+function editar(item) {
+  editandoId = item.id;
 
-      await fetch(api, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name })
-      });
+  nome.value = item.nome;
+  instituicao.value = item.instituicao;
+  data.value = item.data;
+  imagem.value = item.imagem;
+  descricao.value = item.descricao;
+}
 
-      document.getElementById("name").value = "";
-      getItems();
-    }
+async function salvar() {
 
-    async function deleteItem(id) {
-      await fetch(api, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      });
+  const body = {
+    id: editandoId,
+    nome: nome.value,
+    instituicao: instituicao.value,
+    data: data.value,
+    descricao: descricao.value,
+    imagem: imagem.value
+  };
 
-      getItems();
-    }
+  if (editandoId) {
+    await fetch(api, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  } else {
+    await fetch(api, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  }
 
-    getItems();
-  </script>
+  limpar();
+  carregar();
+}
+
+async function deletar(id) {
+  await fetch(api, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  });
+
+  carregar();
+}
+
+function limpar() {
+  editandoId = null;
+
+  nome.value = "";
+  instituicao.value = "";
+  data.value = "";
+  imagem.value = "";
+  descricao.value = "";
+}
+
+carregar();
+</script>
 
 </body>
 </html>
